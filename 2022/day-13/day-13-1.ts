@@ -18,10 +18,9 @@ function compare(a: unknown, b: unknown): number {
 
   const aArray = convertToArray(a);
   const bArray = convertToArray(b);
-  // loop over the indexes of the longer array and reduce to either zero or the first nonzero comparison of a and b's elements
   const range = [...Array(Math.max(aArray.length, bArray.length)).keys()]
   return range.reduce(
-    (ret: number, _: unknown, i: number) =>
+    (ret: number, _: unknown, i: number): number =>
       ret !== 0 ? ret : compare(aArray[i], bArray[i]),
     0,
   );

@@ -1,93 +1,61 @@
 const input = await Deno.readTextFile("input.txt");
 
-const max = 20;
-
-interface Details {
-  sensor: [number, number];
-  beacon: [number, number];
-}
-
-const details: Details[] = [];
-let dX: number | undefined = undefined
-let dY: number | undefined = undefined
+const details: [number, number, number, number][] = [];
 for (const raw of input.split("\n")) {
+  if (!raw) {
+    continue;
+  }
   const [sensor, beacon] = raw.replace("Sensor at ", "").replace(
     " closest beacon is at ",
     "",
   ).split(":");
   const [sX, sY] = sensor.split(", ").map((s) => Number(s.split("=")[1]));
   const [bX, bY] = beacon.split(", ").map((b) => Number(b.split("=")[1]));
-  details.push({ sensor: [sX, sY], beacon: [bX, bY] });
+  details.push([sX, sY, bX, bY]);
 }
 
-for (const row of [...Array(max + 1).keys()]) {
-  const paths: [number, number][] = [];
-  for (const detail of details) {
-    const coverage = getCoverageAtRow(detail.sensor, detail.beacon, row);
-    if (coverage) {
-      paths.push(coverage);
+function rangesNotContainingBeacon(max: number): [number, number][] {
+  const ranges: [number, number][] = [];
+  for (const [sX, sY, bX, bY] of details) {
+    const distance = Math.abs(bX - sX) + Math.abs(bY - sY);
+    if (Math.abs(max - sY) < distance) {
+      const diff = distance - Math.abs(max - sY);
+      ranges.push([sX - diff, sX + diff]);
     }
   }
-  const points: number[] = [];
-  for (const [pX, pY] of paths) {
-    const arr = [...Array(pY - pX).keys()].map((p) => p + pX);
-    for (const p of arr) {
-      points.push(p);
+  // Sort the ranges to make sorting out the overlaps easier
+  ranges.sort((a, b) => a[0] - b[0]);
+
+  // Sort out the overlaps
+  let index = 0;
+  while (index < ranges.length - 1) {
+    if (ranges[index][1] + 1 >= ranges[index + 1][0]) {
+      ranges[index][1] = Math.max(ranges[index + 1][1], ranges[index][1])
+      ranges.splice(index + 1, 1);
+      continue
+    }
+    index++;
+  }
+  return ranges;
+}
+
+const max = 4000000
+for (const currentMax of [...Array(max).keys()]) {
+  const ranges = rangesNotContainingBeacon(currentMax);
+  let foundFullyOverlappingRange = false
+  for (const range of ranges) {
+    // Check for invalid ranges
+    if (range[0] <= 0 && range[1] >= max) {
+      foundFullyOverlappingRange = true;
+      break
     }
   }
-  const unique = new Set(points)
-  if (unique.size === max - 2) {
-    console.log(unique)
-    for (const x of [...Array(max + 1).keys()]) {
-      if (!unique.has(x)) {
-        console.log({ x, row })
-        dX = x
-        dY = row
-        break
+  if (!foundFullyOverlappingRange) {
+    for (const range of ranges) {
+      // Check for invalid ranges
+      if (range[0] <= 0 && range[1] >= 0) {
+        console.log((range[1] + 1) * max + currentMax)
       }
     }
-    break
   }
-}
-
-console.log(dX! * 4000000 + dY!)
-
-
-function getCoverageAtRow(
-  [sX, sY]: [number, number],
-  [bX, bY]: [number, number],
-  row: number,
-): [number, number] | undefined {
-  // console.log({ sX, sY, bX, bY });
-  // S: 8, 7
-  // B: 2, 10
-  // R12: 4, 12
-
-  const yDiff = Math.abs(sY - bY);
-  const xDiff = Math.abs(sX - bX);
-  const sStart = sX - (xDiff + yDiff);
-  const sEnd = sX + (xDiff + yDiff);
-
-  const rDiff = sY - row;
-
-  // Not within the diamond
-  if (Math.abs(rDiff) > xDiff + yDiff) {
-    return undefined;
-  }
-
-  let rStart = sStart + Math.abs(rDiff);
-  let rEnd = sEnd - Math.abs(rDiff);
-  if (rEnd < 0) {
-    return undefined;
-  }
-  if (rStart > max) {
-    return undefined;
-  }
-  if (rStart < 0) {
-    rStart = 0;
-  }
-  if (rEnd > max) {
-    rEnd = max;
-  }
-  return [rStart, rEnd];
 }
