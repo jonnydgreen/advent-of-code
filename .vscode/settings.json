@@ -1,6 +1,7 @@
 {
   "deno.enable": true,
   "cSpell.words": [
-    "Addx"
+    "Addx",
+    "djikstra"
   ]
 }
