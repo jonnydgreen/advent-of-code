@@ -16,5 +16,5 @@ export async function loadInput<
   const { day, part, test, splitLines } = options
   const inputPath = join(ROOT, `day-${day}`, `input-${day}-${part}${test ? '-test' : ''}.txt`)
   const text = await Deno.readTextFile(inputPath)
-  return (splitLines ? text.split('\n') : text) as TReturn
+  return (splitLines ? text.split('\n').filter(l => !!l) : text) as TReturn
 }
