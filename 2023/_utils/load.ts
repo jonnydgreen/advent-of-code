@@ -16,5 +16,19 @@ export async function loadInput<
   const { day, part, test, splitLines } = options
   const inputPath = join(ROOT, `day-${day}`, `input-${day}-${part}${test ? '-test' : ''}.txt`)
   const text = await Deno.readTextFile(inputPath)
-  return (splitLines ? text.split('\n').filter(l => !!l) : text) as TReturn
+  return (splitLines ? text.split('\n').filter((l) => !!l) : text) as TReturn
+}
+
+export async function loadMatrix(options: Omit<LoadInputOptions<false>, 'splitLines'>): Promise<string[][]> {
+  const raw = await loadInput({ ...options, splitLines: true })
+  const edge = Array(raw[0].length + 2).fill('.')
+  const input: string[][] = [[...edge]]
+  for (const line of raw) {
+    const newLine = ['.']
+    newLine.push(...line.split(''))
+    newLine.push('.')
+    input.push([...newLine])
+  }
+  input.push([...edge])
+  return input
 }
